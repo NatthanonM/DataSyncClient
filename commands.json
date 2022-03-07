@@ -1,0 +1,40 @@
+{
+  "CREATE": [
+    {
+      "uuid": "8a29d6c2-5c94-4cb2-ab26-246287aa0851",
+      "author": "Betty",
+      "message": "I almost do",
+      "likes": 22
+    },
+    {
+      "uuid": "3b553778-776c-4efe-b85e-c1fc9a969c7d",
+      "author": "James",
+      "message": "Sleepless night",
+      "likes": 25
+    },
+    {
+      "uuid": "b7257fb5-f406-4c44-b743-f5c918068795",
+      "author": "Taylor",
+      "message": "Clandestine meeting",
+      "likes": 13
+    },
+    {
+      "uuid": "8a29d6c2-5c94-4cb2-ab26-246287aa0851",
+      "author": "Olivia",
+      "message": "The road not taken looks real good now",
+      "likes": 4
+    }
+  ],
+  "UPDATE": [
+    { "uuid": "b7257fb5-f406-4c44-b743-f5c918068795", "author": "Inez" },
+    {
+      "uuid": "2d09b91c-6175-4b04-aff6-cc68e481a1c9",
+      "message": "Forever winter if you go",
+      "likes": 5
+    }
+  ],
+  "DELETE": [
+    "9cd84b6b-53f1-4764-b54e-def38b7e6194",
+    "3b553778-776c-4efe-b85e-c1fc9a969c7d"
+  ]
+}
