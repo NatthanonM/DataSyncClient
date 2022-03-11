@@ -48,19 +48,19 @@ commands = json.load(f)
 f.close()
 
 # Operate delete command
-for delete_command in commands['DELETE']:
+for delete_command in commands['delete']:
     sqlite_delete(delete_command)
 else:
     conn.commit()
 
 # Operate create command
-for create_command in commands['CREATE']:
+for create_command in commands['create']:
     sqlite_insert(create_command)
 else:
     conn.commit
 
 # Operate update command
-for update_command in commands['UPDATE']:
+for update_command in commands['update']:
     sqlite_update(update_command)
 else:
     conn.commit
