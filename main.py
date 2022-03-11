@@ -11,10 +11,11 @@ cur.execute('''PRAGMA journal_mode = OFF''')
 TABLE = 'data_record'
 # endpoint = ".../api/messages/"
 endpoint = ""
+time_filename = "time.txt"
 
 
 def sqlite_create_table():    # Create table
-    statement = '''CREATE TABLE `data_record` (
+    statement = f'''CREATE TABLE IF NOT EXISTS`{TABLE}` (
         `uuid` CHAR(36),
         `author` VARCHAR(64),
         `message` VARCHAR(1024),
@@ -64,13 +65,14 @@ def sqlite_print_all():     # Query data and print it in csv format
         print(*row, sep=",")
 
 
-def retrieve_commands():
+def retrieve_commands():    # Retrieve command list from server
     while True:
-        with open('time.txt') as f:
+        with open(time_filename) as f:
             latest = f.readline()
-        # Retrieve commands1646957437
+        # Declare present time
         date = datetime.datetime.utcnow()
         updated_at = calendar.timegm(date.utctimetuple())
+        # Retrieve commands
         r = requests.get(urljoin(endpoint, latest))
         if r.status_code == 200:
             commands = r.json()
@@ -96,11 +98,11 @@ def main():
         sqlite_update(update_command)
 
     conn.commit()
-    with open('time.txt', 'w') as f:
+    with open(time_filename, 'w') as f:
         f.write('%d' % updated_at)
 
 
-# sqlite_create_table()
+sqlite_create_table()
 # sqlite_delete_all()
 # retrieve_commands()
 main()
