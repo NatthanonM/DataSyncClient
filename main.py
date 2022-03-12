@@ -3,6 +3,8 @@ import sqlite3
 import calendar
 import datetime
 from urllib.parse import urljoin
+import time
+import pickle
 
 conn = sqlite3.connect('my.db')
 cur = conn.cursor()
@@ -12,6 +14,11 @@ TABLE = 'data_record'
 # endpoint = ".../api/messages/"
 endpoint = ""
 time_filename = "time.txt"
+time_used = []
+
+# Retrieve latest update time
+with open(time_filename, 'r') as f:
+    latest = f.readlines()[-1]
 
 
 def sqlite_create_table():    # Create table
@@ -65,10 +72,17 @@ def sqlite_print_all():     # Query data and print it in csv format
         print(*row, sep=",")
 
 
+def retrieve_commands_from_file(filename):
+    a_file = open(filename, "rb")
+    # commands = {'create': [], 'update': [], 'delete': []}
+    commands = pickle.load(a_file)
+    date = datetime.datetime.utcnow()
+    updated_at = calendar.timegm(date.utctimetuple())
+    return (commands, updated_at)
+
+
 def retrieve_commands():    # Retrieve command list from server
     while True:
-        with open(time_filename) as f:
-            latest = f.readline()
         # Declare present time
         date = datetime.datetime.utcnow()
         updated_at = calendar.timegm(date.utctimetuple())
@@ -81,31 +95,59 @@ def retrieve_commands():    # Retrieve command list from server
 
 
 def main():
-    commands, updated_at = retrieve_commands()
+    commands, updated_at = retrieve_commands_from_file("new_commands.pkl")
+
+    start = time.time()
+    end = time.time()
+    time_used.append("Read:\t\t{:.5f} s".format(end-start))
 
     # Operate delete command
+    start = time.time()
     for delete_command in commands['delete']:
         sqlite_delete(delete_command)
-    else:
-        conn.commit()
-        cur.execute('VACUUM')
-
-    # Operate create command
-    sqlite_multiple_insert(commands['create'])
+    end = time.time()
+    time_used.append("Delete:\t\t{:.5f} s".format(end-start))
 
     # Operate update command
+    start = time.time()
     for update_command in commands['update']:
         sqlite_update(update_command)
+    end = time.time()
+    time_used.append("Update:\t\t{:.5f} s".format(end-start))
 
+    # Operate create command
+    start = time.time()
+    sqlite_multiple_insert(commands['create'])
+    end = time.time()
+    time_used.append("Create:\t\t{:.5f} s".format(end-start))
+
+    start = time.time()
     conn.commit()
-    with open(time_filename, 'w') as f:
-        f.write('%d' % updated_at)
+    end = time.time()
+    time_used.append("Commit:\t\t{:.5f} s".format(end-start))
+
+    start = time.time()
+    cur.execute('VACUUM')
+    end = time.time()
+    time_used.append("Clean-up:\t\t{:.5f} s".format(end-start))
+
+    # Update latest update time
+    with open(time_filename, 'a+') as f:
+        f.write('%d\n' % updated_at)
 
 
 sqlite_create_table()
 # sqlite_delete_all()
 # retrieve_commands()
 main()
+
+start = time.time()
 sqlite_print_all()
+end = time.time()
+time_used.append("Sqlite-csv:\t{:.5f} s".format(end-start))
+
+# Save time used log
+with open('time_used.txt', 'w') as f:
+    f.writelines("%s\n" % l for l in time_used)
 
 conn.close()
