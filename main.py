@@ -10,6 +10,7 @@ conn = sqlite3.connect('my.db')
 cur = conn.cursor()
 cur.execute('''PRAGMA synchronous = OFF''')
 cur.execute('''PRAGMA journal_mode = OFF''')
+cur.execute("PRAGMA auto_vacuum = FULL")
 TABLE = 'data_record'
 # endpoint = ".../api/messages/"
 endpoint = ""
@@ -121,15 +122,11 @@ def main():
     end = time.time()
     time_used.append("Create:\t\t{:.5f} s".format(end-start))
 
+    # Commit data changes
     start = time.time()
     conn.commit()
     end = time.time()
     time_used.append("Commit:\t\t{:.5f} s".format(end-start))
-
-    start = time.time()
-    cur.execute('VACUUM')
-    end = time.time()
-    time_used.append("Clean-up:\t\t{:.5f} s".format(end-start))
 
     # Update latest update time
     with open(time_filename, 'a+') as f:
