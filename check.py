@@ -1,15 +1,29 @@
 import pandas as pd
-import sqlite3
+import requests
+endpoint = "http://localhost:8080/api/messages/all-no-delete"
 
-conn = sqlite3.connect('pd.db')
-TABLE = 'data_record'
-df = pd.read_sql(f"SELECT * from {TABLE}", conn)
-print('Created:')
-print(df[(df['author'].str.contains('james')) | (
-    df['author'].str.contains('inez')) | (df['author'].str.contains('drew'))].shape[0])
-print('Updated:')
-print(df[(df['author'].str.contains('betty')) | (
-    df['author'].str.contains('taylor')) | (df['message'].str.contains('Forever winter if you go'))].shape[0])
-'Forever winter if you go'
-print('Deleted:')
-print(33333 + 524288 - df.shape[0])
+print("Getting data from output csv file...")
+
+my_df = pd.read_csv("output.csv", header=None, names=[
+                    'uuid', 'author', 'message', 'likes'])
+# print(my_df)
+
+print("Getting data from server database...")
+r = requests.get(endpoint)
+if r.status_code == 200:
+    data = r.json()
+else:
+    print(r.status_code, r.text)
+    exit()
+server_df = pd.DataFrame(
+    data=data['d'], columns=['uuid', 'author', 'message', 'likes'])
+# print(server_df)
+
+print("Comparing the difference...")
+df_diff = pd.merge(my_df, server_df, how='outer', indicator='Exist')
+df_diff = df_diff.loc[df_diff['Exist'] != 'both']
+if df_diff.shape[0] == 0:
+    print("There is no difference.")
+else:
+    print("Here is the differnce:")
+    print(df_diff)

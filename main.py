@@ -3,7 +3,7 @@ import sqlite3
 import calendar
 import datetime
 from urllib.parse import urljoin
-import time
+# import time
 import pickle
 
 conn = sqlite3.connect('my.db')
@@ -19,7 +19,7 @@ time_used = []
 
 # Retrieve latest update time
 with open(time_filename, 'r') as f:
-    latest = f.readlines()[-1]
+    latest = f.readlines()[-1].strip()
 
 
 def sqlite_create_table():    # Create table
@@ -47,19 +47,19 @@ def sqlite_insert(data):    # Insert a row of data
 
 
 def sqlite_multiple_insert(create_list):    # Insert multiple row
-    create_tuple = [
-        (d['uuid'], d['author'], d['message'], d['likes']) for d in create_list]
     statement = f"INSERT INTO {TABLE} VALUES (?,?,?,?)"
-    cur.executemany(statement, create_tuple)
+    cur.executemany(statement, create_list)
 
 
 def sqlite_update(data):    # Update a row of data
-    pkey = data['uuid']
-    del data['uuid']
-    set_keys = ", ".join([f"{k}=:{k}" for k in data.keys()])
-    statement = f"UPDATE {TABLE} SET {set_keys} WHERE {'uuid'} = :uuid"
+    pkey = data['u']
+    del data['u']
+    key_dict = {'u': 'uuid', 'a': 'author', 'm': 'message', 'l': 'likes'}
+    set_keys = ", ".join(
+        [f"{key_dict[k]}=:{k}" for k in data.keys()])
+    statement = f"UPDATE {TABLE} SET {set_keys} WHERE {'uuid'} = :u"
     args = dict(data)
-    args['uuid'] = pkey
+    args['u'] = pkey
     cur.execute(statement, args)
 
 
@@ -96,37 +96,33 @@ def retrieve_commands():    # Retrieve command list from server
 
 
 def main():
-    commands, updated_at = retrieve_commands_from_file("new_commands.pkl")
-
-    start = time.time()
-    end = time.time()
-    time_used.append("Read:\t\t{:.5f} s".format(end-start))
+    commands, updated_at = retrieve_commands()
 
     # Operate delete command
-    start = time.time()
-    for delete_command in commands['delete']:
+    # start = time.time()
+    for delete_command in commands['d']:
         sqlite_delete(delete_command)
-    end = time.time()
-    time_used.append("Delete:\t\t{:.5f} s".format(end-start))
+    # end = time.time()
+    # time_used.append("Delete:\t\t{:.5f} s".format(end-start))
 
     # Operate update command
-    start = time.time()
-    for update_command in commands['update']:
+    # start = time.time()
+    for update_command in commands['u']:
         sqlite_update(update_command)
-    end = time.time()
-    time_used.append("Update:\t\t{:.5f} s".format(end-start))
+    # end = time.time()
+    # time_used.append("Update:\t\t{:.5f} s".format(end-start))
 
     # Operate create command
-    start = time.time()
-    sqlite_multiple_insert(commands['create'])
-    end = time.time()
-    time_used.append("Create:\t\t{:.5f} s".format(end-start))
+    # start = time.time()
+    sqlite_multiple_insert(commands['c'])
+    # end = time.time()
+    # time_used.append("Create:\t\t{:.5f} s".format(end-start))
 
     # Commit data changes
-    start = time.time()
+    # start = time.time()
     conn.commit()
-    end = time.time()
-    time_used.append("Commit:\t\t{:.5f} s".format(end-start))
+    # end = time.time()
+    # time_used.append("Commit:\t\t{:.5f} s".format(end-start))
 
     # Update latest update time
     with open(time_filename, 'a+') as f:
@@ -138,13 +134,13 @@ sqlite_create_table()
 # retrieve_commands()
 main()
 
-start = time.time()
+# start = time.time()
 sqlite_print_all()
-end = time.time()
-time_used.append("Sqlite-csv:\t{:.5f} s".format(end-start))
+# end = time.time()
+# time_used.append("Sqlite-csv:\t{:.5f} s".format(end-start))
 
 # Save time used log
-with open('time_used.txt', 'w') as f:
-    f.writelines("%s\n" % l for l in time_used)
+# with open('time_used.txt', 'w') as f:
+# f.writelines("%s\n" % l for l in time_used)
 
 conn.close()
