@@ -13,13 +13,9 @@ cur.execute('''PRAGMA journal_mode = OFF''')
 cur.execute("PRAGMA auto_vacuum = FULL")
 TABLE = 'data_record'
 # endpoint = ".../api/messages/"
-endpoint = ""
+endpoint = "http://localhost:8080/api/messages/"
 time_filename = "time.txt"
 time_used = []
-
-# Retrieve latest update time
-with open(time_filename, 'r') as f:
-    latest = f.readlines()[-1].strip()
 
 
 def sqlite_create_table():    # Create table
@@ -41,13 +37,16 @@ def sqlite_delete_all():
 
 
 def sqlite_insert(data):    # Insert a row of data
+    data = {'uuid': data[0], 'author': data[1],
+            'message': data[2], 'likes': data[3]}
     statement = f"INSERT INTO {TABLE} VALUES (:uuid, :author, :message, :likes)"
     args = dict(data)
     cur.execute(statement, args)
 
 
 def sqlite_multiple_insert(create_list):    # Insert multiple row
-    statement = f"INSERT INTO {TABLE} VALUES (?,?,?,?)"
+    statement = f"INSERT INTO {TABLE} VALUES (?, ?, ?, ?)"
+    create_list = [tuple(d) for d in create_list]
     cur.executemany(statement, create_list)
 
 
@@ -82,7 +81,7 @@ def retrieve_commands_from_file(filename):
     return (commands, updated_at)
 
 
-def retrieve_commands():    # Retrieve command list from server
+def retrieve_commands(latest):    # Retrieve command list from server
     while True:
         # Declare present time
         date = datetime.datetime.utcnow()
@@ -95,8 +94,17 @@ def retrieve_commands():    # Retrieve command list from server
     return (commands, updated_at)
 
 
+def reset_data_sync():
+    sqlite_delete_all()
+    with open(time_filename, 'w') as f:
+        f.write('1640970001\n')
+
+
 def main():
-    commands, updated_at = retrieve_commands()
+    # Retrieve latest update time
+    with open(time_filename, 'r') as f:
+        latest = f.readlines()[-1].strip()
+    commands, updated_at = retrieve_commands(latest)
 
     # Operate delete command
     # start = time.time()
@@ -130,7 +138,7 @@ def main():
 
 
 sqlite_create_table()
-# sqlite_delete_all()
+# reset_data_sync()
 # retrieve_commands()
 main()
 

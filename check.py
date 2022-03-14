@@ -26,4 +26,6 @@ if df_diff.shape[0] == 0:
     print("There is no difference.")
 else:
     print("Here is the differnce:")
-    print(df_diff)
+    print(len(df_diff['uuid'].unique()))
+    print("left only:", df_diff[df_diff['Exist'] == 'left_only'])
+    print("right only:", df_diff[df_diff['Exist'] == 'right_only'])
