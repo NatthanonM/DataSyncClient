@@ -13,7 +13,8 @@ cur.execute('''PRAGMA journal_mode = OFF''')
 cur.execute("PRAGMA auto_vacuum = FULL")
 TABLE = 'data_record'
 # endpoint = ".../api/messages/"
-endpoint = "http://localhost:8080/api/messages/"
+endpoint = {'create': 'http://localhost:8080/api/messages/create/',
+            'update-delete': 'http://localhost:8080/api/messages/update-delete/'}
 time_filename = "time.txt"
 time_used = []
 
@@ -81,17 +82,26 @@ def retrieve_commands_from_file(filename):
     return (commands, updated_at)
 
 
-def retrieve_commands(latest):    # Retrieve command list from server
+# Retrieve command list from server
+def retrieve_commands_create(latest, latest_uuid):
     while True:
-        # Declare present time
-        date = datetime.datetime.utcnow()
-        updated_at = calendar.timegm(date.utctimetuple())
         # Retrieve commands
-        r = requests.get(urljoin(endpoint, latest))
+        latest_info = latest + '/' + latest_uuid
+        r = requests.get(urljoin(endpoint['create'], latest_info))
         if r.status_code == 200:
             commands = r.json()
             break
-    return (commands, updated_at)
+    return commands
+
+
+def retrieve_commands_update_delete(latest):
+    while True:
+        # Retrieve commands
+        r = requests.get(urljoin(endpoint['update-delete'], latest))
+        if r.status_code == 200:
+            commands = r.json()
+            break
+    return commands
 
 
 def reset_data_sync():
@@ -104,7 +114,12 @@ def main():
     # Retrieve latest update time
     with open(time_filename, 'r') as f:
         latest = f.readlines()[-1].strip()
-    commands, updated_at = retrieve_commands(latest)
+    # Declare present time
+    date = datetime.datetime.utcnow()
+    updated_at = calendar.timegm(date.utctimetuple())
+
+    # CREATE UPDATE-DELETE SECTION
+    commands = retrieve_commands_update_delete(latest)
 
     # Operate delete command
     # start = time.time()
@@ -113,6 +128,8 @@ def main():
     # end = time.time()
     # time_used.append("Delete:\t\t{:.5f} s".format(end-start))
 
+    del commands['d']
+
     # Operate update command
     # start = time.time()
     for update_command in commands['u']:
@@ -120,11 +137,23 @@ def main():
     # end = time.time()
     # time_used.append("Update:\t\t{:.5f} s".format(end-start))
 
-    # Operate create command
-    # start = time.time()
-    sqlite_multiple_insert(commands['c'])
-    # end = time.time()
-    # time_used.append("Create:\t\t{:.5f} s".format(end-start))
+    del commands
+
+    # CREATE SECTION
+    latest_uuid = "0"
+    while True:
+        commands = retrieve_commands_create(latest, latest_uuid)
+        commands = commands['c']
+        if len(commands) == 0:
+            break
+        # Operate create command
+        # start = time.time()
+        sqlite_multiple_insert(commands)
+        # end = time.time()
+        # time_used.append("Create:\t\t{:.5f} s".format(end-start))
+        latest_uuid = commands[-1][0]
+
+    del commands
 
     # Commit data changes
     # start = time.time()
