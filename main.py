@@ -3,7 +3,7 @@ import sqlite3
 import calendar
 import datetime
 from urllib.parse import urljoin
-# import time
+import sys
 import pickle
 
 conn = sqlite3.connect('my.db')
@@ -12,9 +12,12 @@ cur.execute('''PRAGMA synchronous = OFF''')
 cur.execute('''PRAGMA journal_mode = OFF''')
 cur.execute("PRAGMA auto_vacuum = FULL")
 TABLE = 'data_record'
+my_arg = sys.argv
+base_url = my_arg[1]
 # endpoint = ".../api/messages/"
-endpoint = {'create': 'http://localhost:8080/api/messages/create/',
-            'update-delete': 'http://localhost:8080/api/messages/update-delete/'}
+endpoint = {'create': f"{base_url}/api/messages/create/",
+            'update-delete': f"{base_url}/api/messages/update-delete/"}
+
 time_filename = "time.txt"
 time_used = []
 
@@ -152,6 +155,8 @@ def main():
         # end = time.time()
         # time_used.append("Create:\t\t{:.5f} s".format(end-start))
         latest_uuid = commands[-1][0]
+        if len(commands) < 100000:
+            break
 
     del commands
 

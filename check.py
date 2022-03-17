@@ -1,6 +1,10 @@
 import pandas as pd
 import requests
-endpoint = "http://localhost:8080/api/messages/all-no-delete"
+import sys
+
+my_arg = sys.argv
+base_url = my_arg[1]
+endpoint = f"{base_url}/api/messages/all-no-delete"
 
 print("Getting data from output csv file...")
 
